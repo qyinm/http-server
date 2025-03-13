@@ -6,6 +6,10 @@
 #include <sys/socket.h>
 #include <sstream>
 
+// RapidJSON 헤더 포함
+#include "third-party/rapidjson/include/rapidjson/error/en.h"
+#include "third-party/rapidjson/include/rapidjson/document.h"
+
 #include "HttpMethod.h"
 
 // HTTP 상태 코드와 메시지를 매핑
@@ -22,6 +26,24 @@ const std::map<int, std::string> httpStatusMessages = {
 	{501, "Not Implemented"},
 	{503, "Service Unavailable"}
 };
+
+bool isJson(const std::string& str) {
+	rapidjson::Document doc;
+	rapidjson::ParseResult result = doc.Parse(str.c_str());
+
+	if (!result) {
+		return false;
+	}
+
+	return doc.IsObject() || doc.IsArray();
+}
+
+std::string getContentType(const std::string& str) {
+	if (!isJson(str)) {
+		return "text/plain";
+	}
+	return "application/json";
+}
 
 std::string createResponse(const std::string& contentType, const std::string& body, int statusCode = 200) {
 	std::string statusText = (httpStatusMessages.find(statusCode)->second);
@@ -70,7 +92,7 @@ void handleRequest(int clientSocket) {
 			std::string rawBody = getBodyRawText(buffer);
 			// std::cout << "body: " + rawBody << std::endl;
 
-			response = createResponse("text/plain", rawBody);
+			response = createResponse(getContentType(rawBody), rawBody);
 			break;
 		}
 		default: {
