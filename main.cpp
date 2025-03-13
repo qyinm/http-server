@@ -31,17 +31,55 @@ void handleRequest(int clientSocket) {
 	std::string method_string;
 	requestStream >> method_string;
 
-	switch (HttpMethod http_method = StringToHttpMethod(method_string)) {
+	const HttpMethod httpMethod = StringToHttpMethod(method_string);
+	switch (httpMethod) {
 		case HttpMethod::GET:
 			std::cout << "GET" << std::endl;
+			// HTTP 응답 헤더 작성 (GET 요청 시)
+			{
+				std::string response =
+						"HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/plain\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						"Hello, World!";
+
+				// 응답을 클라이언트에 전송
+				send(clientSocket, response.c_str(), response.length(), 0);
+			}
 			break;
-		case HttpMethod::POST:
+		case HttpMethod::POST: {
 			std::cout << "POST" << std::endl;
-			const std::string rawBody = getBodyRawText(buffer);
+			std::string rawBody = getBodyRawText(buffer);
 			std::cout << "body: " + rawBody << std::endl;
+
+			// POST 요청 시 body를 그대로 반환
+			std::string responseBody = rawBody;
+
+			// HTTP 응답 헤더 작성
+			std::string response =
+					"HTTP/1.1 200 OK\r\n"
+					"Content-Type: text/plain\r\n"
+					"Content-Length: " + std::to_string(responseBody.length()) + "\r\n"
+					"\r\n" +
+					responseBody;
+
+			// 응답을 클라이언트에 전송
+			send(clientSocket, response.c_str(), response.length(), 0);
 			break;
+		}
 		default:
-			std::cout << "Unsupported HTTP method" << std::endl;
+			std::string responseMessage = "Method Not Supported";
+			// 기타 HTTP 메소드에 대한 응답
+			std::string response =
+					"HTTP/1.1 501 Not Implemented\r\n"
+					"Content-Type: text/plain\r\n"
+					"Content-Length: " + std::to_string(responseMessage.length()) + "\r\n"
+					"\r\n" +
+					responseMessage;
+
+		// 응답을 클라이언트에 전송
+			send(clientSocket, response.c_str(), response.length(), 0);
 			break;
 	}
 
