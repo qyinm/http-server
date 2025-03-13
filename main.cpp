@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -7,16 +8,23 @@
 
 #include "HttpMethod.h"
 
+// HTTP 상태 코드와 메시지를 매핑
+const std::map<int, std::string> httpStatusMessages = {
+	{200, "OK"},
+	{201, "Created"},
+	{204, "No Content"},
+	{400, "Bad Request"},
+	{401, "Unauthorized"},
+	{403, "Forbidden"},
+	{404, "Not Found"},
+	{405, "Method Not Allowed"},
+	{500, "Internal Server Error"},
+	{501, "Not Implemented"},
+	{503, "Service Unavailable"}
+};
+
 std::string createResponse(const std::string& contentType, const std::string& body, int statusCode = 200) {
-	std::string statusText;
-	switch (statusCode) {
-		case 200: statusText = "OK"; break;
-		case 201: statusText = "Created"; break;
-		case 400: statusText = "Bad Request"; break;
-		case 404: statusText = "Not Found"; break;
-		case 501: statusText = "Not Implemented"; break;
-		default: statusText = "OK"; break;
-	}
+	std::string statusText = (httpStatusMessages.find(statusCode)->second);
 
 	return "HTTP/1.1 "+ std::to_string(statusCode) +" " + statusText + "\r\n"
 			+ "Content-Type: " + contentType + "\r\n"
