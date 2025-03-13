@@ -59,7 +59,7 @@ void handleRequest(int clientSocket) {
 			break;
 		case HttpMethod::POST: {
 			// std::cout << "POST" << std::endl;
-			// std::string rawBody = getBodyRawText(buffer);
+			std::string rawBody = getBodyRawText(buffer);
 			// std::cout << "body: " + rawBody << std::endl;
 
 			response = createResponse("text/plain", rawBody);
