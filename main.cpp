@@ -31,16 +31,17 @@ void handleRequest(int clientSocket) {
 	std::string method_string;
 	requestStream >> method_string;
 
-	HttpMethod http_method = StringToHttpMethod(method_string);
-
-	switch (http_method) {
+	switch (HttpMethod http_method = StringToHttpMethod(method_string)) {
 		case HttpMethod::GET:
 			std::cout << "GET" << std::endl;
 			break;
 		case HttpMethod::POST:
 			std::cout << "POST" << std::endl;
-			std::string rawBody = getBodyRawText(buffer);
+			const std::string rawBody = getBodyRawText(buffer);
 			std::cout << "body: " + rawBody << std::endl;
+			break;
+		default:
+			std::cout << "Unsupported HTTP method" << std::endl;
 			break;
 	}
 
@@ -59,7 +60,7 @@ void handleRequest(int clientSocket) {
 
 int main() {
 	// 소켓 생성
-	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	const int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverSocket < 0) {
 		std::cerr << "Socket creation failed\n";
 		return -1;
@@ -90,7 +91,7 @@ int main() {
 
 	while (true) {
 		// 클라이언트 연결 수락
-		int clientSocket = accept(serverSocket, nullptr, nullptr);
+		const int clientSocket = accept(serverSocket, nullptr, nullptr);
 		handleRequest(clientSocket);
 		close(clientSocket);
 	}
