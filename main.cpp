@@ -7,6 +7,24 @@
 
 #include "HttpMethod.h"
 
+std::string createResponse(const std::string& contentType, const std::string& body, int statusCode = 200) {
+	std::string statusText;
+	switch (statusCode) {
+		case 200: statusText = "OK"; break;
+		case 201: statusText = "Created"; break;
+		case 400: statusText = "Bad Request"; break;
+		case 404: statusText = "Not Found"; break;
+		case 501: statusText = "Not Implemented"; break;
+		default: statusText = "OK"; break;
+	}
+
+	return "HTTP/1.1 "+ std::to_string(statusCode) +" " + statusText + "\r\n"
+			+ "Content-Type: " + contentType + "\r\n"
+			+ "Content-Length: " + std::to_string(body.length()) + "\r\n"
+			+ "\r\n"
+			+ body;
+}
+
 std::string getBodyRawText(char buffer[1024]) {
 	std::string request(buffer);
 	size_t bodyStart = request.find("\r\n\r\n"); // HTTP 헤더 끝
@@ -32,68 +50,28 @@ void handleRequest(int clientSocket) {
 	requestStream >> method_string;
 
 	const HttpMethod httpMethod = StringToHttpMethod(method_string);
+	std::string response;
 	switch (httpMethod) {
 		case HttpMethod::GET:
-			std::cout << "GET" << std::endl;
+			// std::cout << "GET" << std::endl;
 			// HTTP 응답 헤더 작성 (GET 요청 시)
-			{
-				std::string response =
-						"HTTP/1.1 200 OK\r\n"
-						"Content-Type: text/plain\r\n"
-						"Content-Length: 13\r\n"
-						"\r\n"
-						"Hello, World!";
-
-				// 응답을 클라이언트에 전송
-				send(clientSocket, response.c_str(), response.length(), 0);
-			}
+			response = createResponse("text/plain", "Hello World");
 			break;
 		case HttpMethod::POST: {
-			std::cout << "POST" << std::endl;
-			std::string rawBody = getBodyRawText(buffer);
-			std::cout << "body: " + rawBody << std::endl;
+			// std::cout << "POST" << std::endl;
+			// std::string rawBody = getBodyRawText(buffer);
+			// std::cout << "body: " + rawBody << std::endl;
 
-			// POST 요청 시 body를 그대로 반환
-			std::string responseBody = rawBody;
-
-			// HTTP 응답 헤더 작성
-			std::string response =
-					"HTTP/1.1 200 OK\r\n"
-					"Content-Type: text/plain\r\n"
-					"Content-Length: " + std::to_string(responseBody.length()) + "\r\n"
-					"\r\n" +
-					responseBody;
-
-			// 응답을 클라이언트에 전송
-			send(clientSocket, response.c_str(), response.length(), 0);
+			response = createResponse("text/plain", rawBody);
 			break;
 		}
-		default:
-			std::string responseMessage = "Method Not Supported";
-			// 기타 HTTP 메소드에 대한 응답
-			std::string response =
-					"HTTP/1.1 501 Not Implemented\r\n"
-					"Content-Type: text/plain\r\n"
-					"Content-Length: " + std::to_string(responseMessage.length()) + "\r\n"
-					"\r\n" +
-					responseMessage;
-
-		// 응답을 클라이언트에 전송
-			send(clientSocket, response.c_str(), response.length(), 0);
+		default: {
+			// 미구현 HTTP 메소드에 대한 응답
+			response = createResponse("text/plain", "Method Not Supported", 501);
 			break;
+		}
 	}
-
-	// HTTP 응답 헤더 작성
-	const char *response =
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/plain\r\n"
-			"Content-Length: 13\r\n"
-			"\r\n"
-			"Hello, World!";
-
-
-	// 응답을 클라이언트에 전송
-	send(clientSocket, response, strlen(response), 0);
+	send(clientSocket, response.c_str(), response.length(), 0);
 }
 
 int main() {
